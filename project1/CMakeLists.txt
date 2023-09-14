@@ -1,12 +1,12 @@
 project(proj1)
 
+set(CXX_STANDARD c++17)
+
 set(
     MY_SOURCES
 
     main.cpp
-    Cpu.cpp
-
-    Cpu.h
+    Memory.cpp
     Memory.h
 )
 
