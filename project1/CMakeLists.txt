@@ -1,6 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
 project(proj1)
 
-set(CXX_STANDARD c++17)
+set(CMAKE_CXX_STANDARD 11)
 
 set(
     MY_SOURCES

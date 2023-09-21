@@ -1,12 +1,12 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <stdexcept>
 
 #include <iostream>
 #include <time.h>
 
 #include "Memory.h"
 
-using std::ifstream;
 using std::stringstream;
 using std::cout;
 using std::endl;
@@ -26,7 +26,7 @@ int main(int argc, char * argv[])
     if(argc <= 2)
     {
         printf("No arguments given\n");
-        return EXIT_FAILURE;
+        return 1;
     }
 
     srand(time(NULL));
@@ -44,7 +44,7 @@ int main(int argc, char * argv[])
         read(mem_cpu[READ], memStatus, sizeof(*memStatus));
         if(*memStatus == 0)
         {
-            return EXIT_FAILURE;
+            return 1;
         }
 
         int PC = 0,
@@ -272,7 +272,7 @@ int main(int argc, char * argv[])
                     timerIntBool = false;
                     break;
                 case 50:
-                    return EXIT_SUCCESS;
+                    return 0;
             }
             ++PC;
             ++timer;
@@ -322,7 +322,7 @@ int main(int argc, char * argv[])
     else
     {
         printf("Failed\n");
-        return EXIT_FAILURE;
+        return 1;
     }
 }
 
@@ -331,7 +331,7 @@ void checkMemory (int addr, bool k)
     if(addr > 999 && !k)
     {
         printf("Memory violation: accessing system address %d in user mode\n", addr); 
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     return;
