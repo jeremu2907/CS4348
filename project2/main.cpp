@@ -3,99 +3,211 @@
 #include <semaphore.h>
 #include <time.h>
 #include <queue>
+#include <fcntl.h>
 
 #include "utils.h"
 
 using std::string;
 
-sem_t frontDeskSem;
-sem_t bellhopsSem;
-sem_t endOfLine;
+sem_t * frontDeskSem = sem_open("/frontDeskSem", O_CREAT, 0644, 0);
+sem_t * guestInLine = sem_open("/guestInLine", O_CREAT, 0644, 0);
+sem_t * bellhopSem = sem_open("/bellhopSem", O_CREAT, 0644, 0);
+sem_t * guestInBellhopLine = sem_open("/guestInBellhopLine", O_CREAT, 0644, 0);
+sem_t * guestEnteredRoom = sem_open("/guestEnteredRoom", O_CREAT, 0644, 0);
+sem_t * bellhopReceived = sem_open("/bellhopReceived", O_CREAT, 0644, 0);
+sem_t * bellhopTip = sem_open("/bellhopTip", O_CREAT, 0644, 0);
+
+sem_t * guestLineQueueMutex = sem_open("/guestLineQueueMutex", O_CREAT, 0644, 1);
+sem_t * guestBellhopQueueMutex = sem_open("/guestBellhopQueueMutex", O_CREAT, 0644, 1);
+sem_t * frontDeskRoomMutex = sem_open("/frontDeskRoomMutex", O_CREAT, 0644, 1);
+
+
+const unsigned int HOTEL_ROOM_NUMBER = 100;
+const int NUMBER_OF_GUESTS = 25;
+const int NUMBER_OF_FRONTDESK_EMPLOYEES = 2;
+const int NUMBER_OF_BELLHOPS = 1;
+
 
 void *frontDeskEmployee(void *arg)
 {
-    frontDeskStruct *info = (frontDeskStruct *) arg;
-
-    printf("Front desk employee %d created\n", info->id);
+    frontDeskThreadsArg * args = (frontDeskThreadsArg *) arg;
+    printf("Front desk employee %d created\n", args->id);
 
     while(true)
-    {
-        sem_post(&frontDeskSem);
+    {   
         
+        sem_wait(frontDeskRoomMutex);
+        int emptyRoom = hotelService::firstEmptyRoom(args->roomsAvail);
+        args->roomsAvail->at(emptyRoom) = false;
+        if(hotelService::occupiedRooms(args->roomsAvail) > NUMBER_OF_GUESTS)
+        {
+            sem_post(frontDeskRoomMutex);
+            // sem_post(frontDeskSem);
+            break;
+        }
+        sem_post(frontDeskRoomMutex);
+
+        sem_wait(guestInLine);
+
+        sem_wait(guestLineQueueMutex);
+        guestInfo * guest = args->line->front();
+        guest->room = emptyRoom + 1;
+        guest->frontDeskService = args->id;
+        printf("Front desk employee %d registers guest %d and assigns room %d\n", args->id, guest->id, guest->room);
+        args->line->pop();
+        sem_post(guestLineQueueMutex);
+        sem_post(frontDeskSem);
     }
+
     pthread_exit(NULL);
 }
 
 void *guest(void *arg)
 {
-    guestThreadStruct * info = (guestThreadStruct *) arg;
-    printf("Guest %d created\n", info->guest->id);
-    info->line->push(info->guest);
+    guestThreadArg * args = (guestThreadArg *) arg;
+    guestInfo * guest = &args->guest;
+    printf("Guest %d created\n", guest->id);
+    printf("Guest %d enters hotel with %d bag\n", guest->id, guest->bags);
 
-    sem_wait(&frontDeskSem);
-    printf("Guest %d retires for the evening\n", info->guest->id);
+
+    sem_wait(guestLineQueueMutex);
+    args->line->push(guest);
+    sem_post(guestLineQueueMutex);
+
+    sem_post(guestInLine);
+    sem_wait(frontDeskSem);
+    
+    printf("Guest %d receives room key for room %d from front desk employee %d\n", guest->id, guest->room, guest->frontDeskService);
+
+    if(guest->bags > 2)
+    {
+        printf("Guest %d requests help with bags\n", guest->id);
+
+        sem_wait(guestBellhopQueueMutex);
+        args->bellhopLine->push(guest);
+        sem_post(guestBellhopQueueMutex);
+
+        sem_post(guestInBellhopLine);
+        sem_wait(bellhopReceived);
+        printf("Guest %d enters room %d\n", guest->id, guest->room);
+        sem_post(guestEnteredRoom);
+        sem_wait(bellhopSem);
+
+        printf("Guest %d receives bags from bellhop %d and gives tip\n", guest->id, guest->bellhopService);
+        sem_post(bellhopTip);
+    }
+    else
+    {
+        printf("Guest %d enters room %d\n", guest->id, guest->room);
+    }
+    
+    printf("Guest %d retires for the evening\n", guest->id);
     pthread_exit(NULL);
 }
 
 void *bellhop(void *arg)
 {
+    bellHopThreadsArg * args = (bellHopThreadsArg *) arg;
+    printf("Bellhop %d created\n", args->id);
+
+    while(true)
+    {   
+        // sem_wait(frontDeskRoomMutex);
+        // sem_wait(guestBellhopQueueMutex);
+        // sem_wait(guestLineQueueMutex);
+        if(
+            (hotelService::occupiedRooms(args->roomsAvail) > NUMBER_OF_GUESTS) &&
+            args->line->empty() &&
+            args->serviceLine->empty()
+        )
+        {
+            // sem_post(guestLineQueueMutex);
+            // sem_post(guestBellhopQueueMutex);
+            // sem_post(frontDeskRoomMutex);
+            break;
+        }
+        // sem_post(guestLineQueueMutex);
+        // sem_post(guestBellhopQueueMutex);
+        // sem_post(frontDeskRoomMutex);
+        
+        sem_wait(guestInBellhopLine);
+
+        sem_wait(guestBellhopQueueMutex);
+        guestInfo * guest = args->serviceLine->front();
+        args->serviceLine->pop();
+        sem_post(guestBellhopQueueMutex);
+        guest->bellhopService = args->id;
+        
+        printf("Bellhop %d receives bags from guest %d\n", args->id, guest->id);
+        sem_post(bellhopReceived);
+        sem_wait(guestEnteredRoom);
+        printf("Bellhop %d delivers bags to guest %d\n", args->id, guest->id);
+
+        sem_post(bellhopSem);
+        sem_wait(bellhopTip);
+    }
+
     pthread_exit(NULL);
 }
 
-
 int main(int argc, char** argv)
 {
-    srand(time(NULL));
+    sem_unlink("/frontDeskSem");
+    sem_unlink("/guestInLine");
+    sem_unlink("/guestLineQueueMutex");
+    sem_unlink("/frontDeskRoomMutex");
+    sem_unlink("/guestBellhopQueueMutex");
+    sem_unlink("/bellhopSem");
+    sem_unlink("/guestInBellhopLine");
+    sem_unlink("/guestEnteredRoom");
+    sem_unlink("/bellhopReceived");
+    sem_unlink("/bellhopTip");
 
-    const int NUMBER_OF_GUESTS = 25;
-    const int NUMBER_OF_FRONTDESK_EMPLOYEES = 2;
-    const int NUMBER_OF_BELLHOPS = 2;
+    srand(time(NULL));
 
     pthread_t frontDeskThreads[NUMBER_OF_FRONTDESK_EMPLOYEES];
     pthread_t bellhopThreads[NUMBER_OF_BELLHOPS];
     pthread_t guestThreads[NUMBER_OF_GUESTS];
 
-    std::queue<guestInfo *> *line = new std::queue<guestInfo *>();
-
-    bool availableRooms[25] = {false};
-
+    std::queue<guestInfo *> *frontDeskLine = new std::queue<guestInfo *>();
+    std::queue<guestInfo *> *bellhopLine = new std::queue<guestInfo *>();
+    std::vector<bool> *availableRooms = new std::vector<bool>(HOTEL_ROOM_NUMBER, true);
 
     printf("Simulation starts\n");
 
-    sem_init(&frontDeskSem, 0, 2);
     //Creating Front Desk Employee
-    frontDeskStruct *employeeStruct;
     for(int i = 0; i < NUMBER_OF_FRONTDESK_EMPLOYEES; ++i)
     {
-        employeeStruct = new frontDeskStruct;
-        employeeStruct->id = i;
-        employeeStruct->roomsAvail = availableRooms;
-        employeeStruct->line = line;
-        pthread_create(&frontDeskThreads[i], NULL, frontDeskEmployee, (void *) employeeStruct);
+        frontDeskThreadsArg *frontDeskArg = new frontDeskThreadsArg;
+        frontDeskArg->id = i;
+        frontDeskArg->roomsAvail = availableRooms;
+        frontDeskArg->line = frontDeskLine;
+        pthread_create(&frontDeskThreads[i], NULL, frontDeskEmployee, (void *) frontDeskArg);
     }
 
-    //Creating Bellhops
-    sem_init(&bellhopsSem, 0, 2);
+    // Creating Bellhops
     for(int i = 0; i < NUMBER_OF_BELLHOPS; ++i)
     {
-        printf("Bellhop %d created\n", i);
-        pthread_create(&bellhopThreads[i], NULL, bellhop, NULL);
+        bellHopThreadsArg * bellHopArg = new bellHopThreadsArg;
+        bellHopArg->id = i;
+        bellHopArg->serviceLine = bellhopLine;
+        bellHopArg->line = frontDeskLine;
+        bellHopArg->roomsAvail = availableRooms;
+        pthread_create(&bellhopThreads[i], NULL, bellhop, (void *) bellHopArg);
     }
 
-    sem_init(&endOfLine, 0, 25);
     //Creating Guests
-    guestThreadStruct * guestThreadArg;
     for(int i = 0; i < NUMBER_OF_GUESTS; ++i)
     {
-        guestThreadArg = new guestThreadStruct;
-        guestThreadArg->guest = new guestInfo;
-        guestThreadArg->guest->id = i;
-        guestThreadArg->guest->bags = rand()%6;
-        guestThreadArg->line = line;
-        pthread_create(&guestThreads[i], NULL, guest, (void *) guestThreadArg);
+        guestThreadArg * guestArg = new guestThreadArg;
+        guestArg->guest.id = i;
+        guestArg->guest.bags = 3;
+        guestArg->guest.room = i;
+        guestArg->guest.frontDeskService = 1;
+        guestArg->line = frontDeskLine;
+        guestArg->bellhopLine = bellhopLine;
+        pthread_create(&guestThreads[i], NULL, guest, (void *) guestArg);
     }
-
-
 
     //Joining Front Desk Employee
     for(int i = 0; i < NUMBER_OF_FRONTDESK_EMPLOYEES; ++i)
@@ -103,7 +215,7 @@ int main(int argc, char** argv)
         pthread_join(frontDeskThreads[i], NULL);
     }
 
-    //Joining Bellhops
+    // Joining Bellhops
     for(int i = 0; i < NUMBER_OF_BELLHOPS; ++i)
     {
         pthread_join(bellhopThreads[i], NULL);
@@ -117,6 +229,28 @@ int main(int argc, char** argv)
     }
 
     printf("Simulation ends\n");
+
+    sem_close(frontDeskSem);
+    sem_close(guestInLine);
+    sem_close(guestLineQueueMutex);
+    sem_close(frontDeskRoomMutex);
+    sem_close(bellhopReceived);
+    sem_close(guestBellhopQueueMutex);
+    sem_close(bellhopSem);
+    sem_close(guestInBellhopLine);
+    sem_close(guestEnteredRoom);
+    sem_close(bellhopTip);
+
+    sem_unlink("/frontDeskSem");
+    sem_unlink("/guestInLine");
+    sem_unlink("/guestLineQueueMutex");
+    sem_unlink("/frontDeskRoomMutex");
+    sem_unlink("/guestBellhopQueueMutex");
+    sem_unlink("/bellhopSem");
+    sem_unlink("/guestInBellhopLine");
+    sem_unlink("/guestEnteredRoom");
+    sem_unlink("/bellhopReceived");
+    sem_unlink("/bellhopTip");
 
     return EXIT_SUCCESS;
 }
