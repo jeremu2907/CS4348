@@ -25,7 +25,7 @@ sem_t * frontDeskRoomMutex = sem_open("/frontDeskRoomMutex", O_CREAT, 0644, 1);
 const unsigned int HOTEL_ROOM_NUMBER = 100;
 const int NUMBER_OF_GUESTS = 25;
 const int NUMBER_OF_FRONTDESK_EMPLOYEES = 2;
-const int NUMBER_OF_BELLHOPS = 1;
+const int NUMBER_OF_BELLHOPS = 2;
 
 
 void *frontDeskEmployee(void *arg)
@@ -53,9 +53,11 @@ void *frontDeskEmployee(void *arg)
         guestInfo * guest = args->line->front();
         guest->room = emptyRoom + 1;
         guest->frontDeskService = args->id;
-        printf("Front desk employee %d registers guest %d and assigns room %d\n", args->id, guest->id, guest->room);
         args->line->pop();
         sem_post(guestLineQueueMutex);
+
+        printf("Front desk employee %d registers guest %d and assigns room %d\n", args->id, guest->id, guest->room);
+
         sem_post(frontDeskSem);
     }
 
@@ -81,20 +83,21 @@ void *guest(void *arg)
 
     if(guest->bags > 2)
     {
-        printf("Guest %d requests help with bags\n", guest->id);
-
         sem_wait(guestBellhopQueueMutex);
         args->bellhopLine->push(guest);
+        printf("Guest %d requests help with bags\n", guest->id);
         sem_post(guestBellhopQueueMutex);
 
         sem_post(guestInBellhopLine);
         sem_wait(bellhopReceived);
-        printf("Guest %d enters room %d\n", guest->id, guest->room);
+
         sem_post(guestEnteredRoom);
+        printf("Guest %d enters room %d\n", guest->id, guest->room);
+
         sem_wait(bellhopSem);
 
-        printf("Guest %d receives bags from bellhop %d and gives tip\n", guest->id, guest->bellhopService);
         sem_post(bellhopTip);
+        printf("Guest %d receives bags from bellhop %d and gives tip\n", guest->id, guest->bellhopService);
     }
     else
     {
@@ -137,13 +140,15 @@ void *bellhop(void *arg)
         args->serviceLine->pop();
         sem_post(guestBellhopQueueMutex);
         guest->bellhopService = args->id;
-        
-        printf("Bellhop %d receives bags from guest %d\n", args->id, guest->id);
+
         sem_post(bellhopReceived);
+        printf("Bellhop %d receives bags from guest %d\n", args->id, guest->id);
+
         sem_wait(guestEnteredRoom);
-        printf("Bellhop %d delivers bags to guest %d\n", args->id, guest->id);
 
         sem_post(bellhopSem);
+        printf("Bellhop %d delivers bags to guest %d\n", args->id, guest->id);
+
         sem_wait(bellhopTip);
     }
 
@@ -152,17 +157,6 @@ void *bellhop(void *arg)
 
 int main(int argc, char** argv)
 {
-    sem_unlink("/frontDeskSem");
-    sem_unlink("/guestInLine");
-    sem_unlink("/guestLineQueueMutex");
-    sem_unlink("/frontDeskRoomMutex");
-    sem_unlink("/guestBellhopQueueMutex");
-    sem_unlink("/bellhopSem");
-    sem_unlink("/guestInBellhopLine");
-    sem_unlink("/guestEnteredRoom");
-    sem_unlink("/bellhopReceived");
-    sem_unlink("/bellhopTip");
-
     srand(time(NULL));
 
     pthread_t frontDeskThreads[NUMBER_OF_FRONTDESK_EMPLOYEES];
@@ -201,7 +195,7 @@ int main(int argc, char** argv)
     {
         guestThreadArg * guestArg = new guestThreadArg;
         guestArg->guest.id = i;
-        guestArg->guest.bags = 3;
+        guestArg->guest.bags = 6 * rand();
         guestArg->guest.room = i;
         guestArg->guest.frontDeskService = 1;
         guestArg->line = frontDeskLine;
@@ -230,17 +224,6 @@ int main(int argc, char** argv)
 
     printf("Simulation ends\n");
 
-    sem_close(frontDeskSem);
-    sem_close(guestInLine);
-    sem_close(guestLineQueueMutex);
-    sem_close(frontDeskRoomMutex);
-    sem_close(bellhopReceived);
-    sem_close(guestBellhopQueueMutex);
-    sem_close(bellhopSem);
-    sem_close(guestInBellhopLine);
-    sem_close(guestEnteredRoom);
-    sem_close(bellhopTip);
-
     sem_unlink("/frontDeskSem");
     sem_unlink("/guestInLine");
     sem_unlink("/guestLineQueueMutex");
@@ -251,6 +234,17 @@ int main(int argc, char** argv)
     sem_unlink("/guestEnteredRoom");
     sem_unlink("/bellhopReceived");
     sem_unlink("/bellhopTip");
+
+    sem_close(frontDeskSem);
+    sem_close(guestInLine);
+    sem_close(guestLineQueueMutex);
+    sem_close(frontDeskRoomMutex);
+    sem_close(bellhopReceived);
+    sem_close(guestBellhopQueueMutex);
+    sem_close(bellhopSem);
+    sem_close(guestInBellhopLine);
+    sem_close(guestEnteredRoom);
+    sem_close(bellhopTip);
 
     return EXIT_SUCCESS;
 }
