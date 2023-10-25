@@ -7,10 +7,8 @@
 
 #include "Memory.h"
 
-using std::stringstream;
 using std::cout;
 using std::endl;
-using std::string;
 
 #define READ    0
 #define WRITE   1
@@ -29,17 +27,19 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    srand(time(NULL));
+    srand(time(NULL));  //Setting random with unix time as seed
+
     int cpu_mem[2];
     int mem_cpu[2];
     if(pipe(cpu_mem) < 0 || pipe(mem_cpu) < 0)
-        return 0;
+        return 0;       //Pipe failed
 
     pid_t process = fork();
 
     //CPU
     if(process > 0)
     {
+        //cli file error handling
         int *memStatus = new int;
         read(mem_cpu[READ], memStatus, sizeof(*memStatus));
         if(*memStatus == 0)
@@ -62,10 +62,13 @@ int main(int argc, char * argv[])
 
         while(true)
         {
+            //Read instruction
             write(cpu_mem[WRITE], &PC, sizeof(PC));
             read(mem_cpu[READ], &IR, sizeof(IR));
 
-            if(timer == timerInt)
+            ++timer;
+            //Check counter
+            if(timer >= timerInt)
             {
                 timer = 0;
                 if(!kernel)
@@ -79,7 +82,7 @@ int main(int argc, char * argv[])
 
             switch(IR)
             {
-                case 1:     //Load data to AC
+                case 1:
                     ++PC;
                     write(cpu_mem[WRITE], &PC, sizeof(PC));
                     read(mem_cpu[READ], &AC, sizeof(AC));
@@ -244,7 +247,6 @@ int main(int argc, char * argv[])
                     write(cpu_mem[WRITE], &SP, sizeof(SP));
                     read(mem_cpu[READ], &AC, sizeof(AC));
                     ++SP;
-                    //Ignore cleaning stack for now
                     break;
                 case 29:
                     op = 1999;
@@ -275,15 +277,17 @@ int main(int argc, char * argv[])
                     return 0;
             }
             ++PC;
-            ++timer;
         }
 
     }
+    
     //Memory
     else if(process == 0)
     {
         Memory memory;
         int * fileRead;
+        
+        //cli error handling
         try
         {
             memory = Memory(argv[1]);
@@ -326,6 +330,8 @@ int main(int argc, char * argv[])
     }
 }
 
+//Check to see if program is illegally accessing data, with system mode
+//Call in CPU process only
 void checkMemory (int addr, bool k)
 {
     if(addr > 999 && !k)

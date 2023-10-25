@@ -18,10 +18,13 @@ sample*.txt     sample files
 cmake .
 make
 ```
-##### Option 2: g++
+##### Option 2: Manual
 ```bash
 g++ -std=c++11 Memory.cpp main.cpp -o proj_1
 ```
+
+##### Other platforms:
+Please consult your system help page to build c++ files
 
 ### Run
 ./proj_1 [sample_file_name] [timer_val]

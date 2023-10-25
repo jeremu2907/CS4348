@@ -52,20 +52,6 @@ namespace hotelService{
 
         return -1;
     }
-
-    int occupiedRooms(std::vector<bool> *roomList)
-    {
-        int num = 0;
-        for(auto i : *roomList)
-        {
-            if(i == false)
-            {
-                num++;
-            }
-        }
-
-        return num;
-    }
 }
 
 

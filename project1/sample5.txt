@@ -1,0 +1,61 @@
+    //Printing the first 46th fibonacci numbers
+    //Limited to 46th because int size overflow
+1   //Load 0 to AC
+0
+7   //Copy AC to .498
+498
+7   //Copy AC to .497
+497
+9   //Print base case of 0 and new line
+1
+1
+10
+9
+2
+1   //Load 1 to AC
+1
+7   //Copy AC to .499
+499
+20  //Jump .500
+500
+.500
+2   //load .498
+498
+14  //Copy AC to X
+2   //load .499
+499
+16  //Copy AC to Y
+1   //load 0 to AC
+0
+10  //AC + X
+11  //AC + Y
+9   //Write AC as int
+1
+14  //Copy AC to X
+1   //Load newline
+10
+9   //Print newline
+2
+15  //Copy X to AC
+7   //Copy AC to .499
+499
+17  //Copy Y to AC
+7   //Copy AC to .498
+498
+2   //load .497
+497
+14  //Copy AC to X
+25  //X++
+1   //load 45
+45
+12  //AC - X
+16  //Copy AC to Y
+15  //Copy X to AC
+7   //Copy AC to .497
+497
+17  //Copy Y to AC
+22  //Jump neq .500
+500
+50
+.1000
+30

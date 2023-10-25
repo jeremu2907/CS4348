@@ -34,18 +34,18 @@ Memory::Memory(string filename)
     while(std::getline(inFile, line)){
         sstream.str(line);
 
-        if(sstream.str() == "")
+        if(sstream.str() == "") //Empty line
         {
             sstream.clear();
             continue;
         }
 
-        std::getline(sstream, data, ' ');
+        std::getline(sstream, data, ' ');   //Empty line with space
         if(data.size() == 0)
         {
             continue;
         }
-        if(data[0] == '.')
+        if(data[0] == '.')  //Jump to address and load
         {
             data = data.substr(1, data.size() - 1);
             // cout << "JUMP TO ADDRES" << data << endl;
