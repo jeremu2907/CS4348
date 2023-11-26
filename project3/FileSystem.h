@@ -10,14 +10,17 @@ class FileSystem
     protected:
         Disk disk;
         int * getFileInfo(std::vector<char> v, std::string s);
+        void removeFileInfo(std::string s);
 
     public:
         void displayFileTable();
         void displayBitMap();
-        
-        virtual void copyToSim (std::string fileName, std::vector<char> val) {};
+        void displayDiskBlock(int block);
+
+        virtual bool copyToSim (std::string fileName, std::vector<char> val) {return false;};
         virtual void copyToSystem (std::string systemFileName, std::string simFileName) {};
         virtual void displayFile(std::string fileName) {};
+        virtual void deleteFile(std::string fileName) {};
 };
 
 class Contiguous : public FileSystem
@@ -27,9 +30,10 @@ class Contiguous : public FileSystem
         int findLastEntryTable();
 
     public:
-        void copyToSim (std::string fileName, std::vector<char> val) override;
+        bool copyToSim (std::string fileName, std::vector<char> val) override;
         void copyToSystem (std::string systemFileName, std::string simFileName) override;
         void displayFile(std::string fileName) override;
+        void deleteFile(std::string fileName) override;
 };
 
 #endif

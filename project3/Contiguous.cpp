@@ -23,12 +23,41 @@ int Contiguous::findBlock(int numBlocks)
     return -1; // Return -1 if the sub-vector is not found
 }
 
-void Contiguous::copyToSim(std::string fileName, std::vector<char> val) 
+int Contiguous::findLastEntryTable()
+{
+    std::vector<char> data = disk.read(0);
+    int pos;
+    for(int i = data.size() - 1; i >= 0; i--)
+    {
+        if (data.at(i) == '\n')
+        {
+            pos = i + 1;
+            break;
+        }
+    }
+
+    return pos;
+}
+
+
+bool Contiguous::copyToSim(std::string fileName, std::vector<char> val) 
 {
     int numBlocks = (val.size() + Disk::BLOCK_SIZE) / Disk::BLOCK_SIZE;
     int block = Contiguous::findBlock(numBlocks);
 
-    std::string tableEntry = fileName + "\t\t" + std::to_string(block) + "\t" + std::to_string(numBlocks) + "\n";
+    if (block == -1)
+    {
+        std::cout << "Not enough space in disk.\n\n";
+        return;
+    }
+
+    if (numBlocks > 10)
+    {
+        std::cout << "File exceeded 10 blocks. Try another file.\n\n";
+        return false;
+    }
+
+    std::string tableEntry = fileName + "\t\t\t" + std::to_string(block) + "\t" + std::to_string(numBlocks) + "\n";
 
     //Update File table
     std::vector<char> data = disk.read(0);
@@ -58,6 +87,8 @@ void Contiguous::copyToSim(std::string fileName, std::vector<char> val)
         beginIt = endIt;
         endIt = (endIt + Disk::BLOCK_SIZE >= val.end()) ? val.end() : endIt + Disk::BLOCK_SIZE;
     }
+
+    return true;
 }
 
 void Contiguous::copyToSystem (std::string source, std::string dest)
@@ -79,27 +110,17 @@ void Contiguous::copyToSystem (std::string source, std::string dest)
     outFile.close();
 }
 
-int Contiguous::findLastEntryTable()
-{
-    std::vector<char> data = disk.read(0);
-    int pos;
-    for(int i = data.size() - 1; i >= 0; i--)
-    {
-        if (data.at(i) == '\n')
-        {
-            pos = i + 1;
-            break;
-        }
-    }
-
-    return pos;
-}
-
 void Contiguous::displayFile(std::string fileName)
 {
     //Find starting block and length
     std::vector<char> data = disk.read(0);
+
     int * fileInfo = getFileInfo(data, fileName);
+    if (*fileInfo == -1)
+    {
+        std::cout << "File not found. \n\n";
+        return;
+    }
     int block = fileInfo[0];
     int numBlocks = fileInfo[1];
 
@@ -109,4 +130,26 @@ void Contiguous::displayFile(std::string fileName)
         for (auto i : data)
             std::cout << i;
     }
+}
+
+void Contiguous::deleteFile(std::string fileName)
+{
+    std::vector<char> data = disk.read(0);
+    int * fileInfo = getFileInfo(data, fileName);
+    if (*fileInfo == -1)
+    {
+        std::cout << "File not found. \n\n";
+        return;
+    }
+    int block = fileInfo[0];
+    int numBlocks = fileInfo[1];
+
+    data = disk.read(1);
+    for (int i = 0; i < numBlocks; i++)
+    {
+        data.at(block + i) = '0';
+    }
+    disk.write(1, data);
+
+    removeFileInfo(fileName);
 }

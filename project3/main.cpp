@@ -13,6 +13,8 @@ using std::string;
 void copyFileFromRealSystem(FileSystem * fileSystem);
 void copyFileFromSimulation(FileSystem * fileSystem);
 void displayFile(FileSystem * fileSystem);
+void displayDiskBlock(FileSystem * fileSystem);
+void deleteFile(FileSystem * fileSystem);
 
 int main (int argc, char * argv[])
 {
@@ -76,6 +78,7 @@ int main (int argc, char * argv[])
                 cout << endl << endl;
                 break;
             case 4:
+                displayDiskBlock(fileSystem);
                 break;
             case 5:
                 copyFileFromSimulation(fileSystem);
@@ -84,6 +87,7 @@ int main (int argc, char * argv[])
                 copyFileFromRealSystem(fileSystem);
                 break;
             case 7:
+                deleteFile(fileSystem);
                 break;
             case 8:
                 break;
@@ -115,15 +119,23 @@ void copyFileFromRealSystem(FileSystem * fileSystem)
     cout << "\n\nCopy File From System";
     cout << "\nCopy from: ";
     cin >> source;
-    cout << "\nCopy to: ";
-    cin >> dest;
-
     std::ifstream inFile(source);
 
     if (!inFile)
     {
-        exit(EXIT_FAILURE);
+        cout << "Could not find source file.\n\n";
+        return;
     }
+
+    do
+    {
+        if(dest.size() > 8)
+        {
+            cout << "Simulation file name exceed 8 characters. Try again.\n";
+        }
+        cout << "\nCopy to: ";
+        cin >> dest;
+    } while (dest.size() > 8);
 
     string data = "";
     string buffer;
@@ -131,9 +143,12 @@ void copyFileFromRealSystem(FileSystem * fileSystem)
     {
         data += buffer + "\n";
     }
-
-    fileSystem->copyToSim(dest, std::vector<char>(data.begin(), data.end()));
     inFile.close();
+
+    if(!fileSystem->copyToSim(dest, std::vector<char>(data.begin(), data.end())))
+    {
+        return;
+    }
     printf("\nFile %s copied\n\n", source.c_str());
 }
 
@@ -145,6 +160,30 @@ void displayFile(FileSystem * fileSystem)
     cin >> source;
     cout << endl;
     fileSystem->displayFile(source);
+    cout << endl;
+    cout << endl;
+}
+
+void displayDiskBlock(FileSystem * fileSystem)
+{
+    int block;
+    cout << "\n\nDisplay Disk Block";
+    cout << "\nBlock Number: ";
+    cin >> block;
+    cout << endl;
+    fileSystem->displayDiskBlock(block);
+    cout << endl;
+    cout << endl;
+}
+
+void deleteFile(FileSystem * fileSystem)
+{
+    string fileName;
+    cout << "\n\nDelete File in Simulation";
+    cout << "\nFile Name: ";
+    cin >> fileName;
+    cout << endl;
+    fileSystem->deleteFile(fileName);
     cout << endl;
     cout << endl;
 }
