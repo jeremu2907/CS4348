@@ -13,6 +13,8 @@ class FileSystem
 
     public:
         void displayFileTable();
+        void displayBitMap();
+        
         virtual void copyToSim (std::string fileName, std::vector<char> val) {};
         virtual void copyToSystem (std::string systemFileName, std::string simFileName) {};
         virtual void displayFile(std::string fileName) {};

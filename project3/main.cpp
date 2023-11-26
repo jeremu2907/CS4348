@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "utils.h"
-#include "Disk.h"
 #include "FileSystem.h"
 
 using std::cout;
@@ -13,6 +12,7 @@ using std::string;
 
 void copyFileFromRealSystem(FileSystem * fileSystem);
 void copyFileFromSimulation(FileSystem * fileSystem);
+void displayFile(FileSystem * fileSystem);
 
 int main (int argc, char * argv[])
 {
@@ -42,8 +42,6 @@ int main (int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    Disk disk;
-
     int option;
     bool invalidChoice = false;
     while(option != 8)
@@ -64,6 +62,7 @@ int main (int argc, char * argv[])
         switch(option)
         {
             case 1:
+                displayFile(fileSystem);
                 break;
             case 2:
                 cout << endl;
@@ -71,6 +70,10 @@ int main (int argc, char * argv[])
                 cout << endl;
                 break;
             case 3:
+                cout << endl;
+                cout << "Display Free Space Bitmap" << endl;
+                fileSystem->displayBitMap();
+                cout << endl << endl;
                 break;
             case 4:
                 break;
@@ -132,4 +135,16 @@ void copyFileFromRealSystem(FileSystem * fileSystem)
     fileSystem->copyToSim(dest, std::vector<char>(data.begin(), data.end()));
     inFile.close();
     printf("\nFile %s copied\n\n", source.c_str());
+}
+
+void displayFile(FileSystem * fileSystem)
+{
+    string source;
+    cout << "\n\nDisplay File in Simulation";
+    cout << "\nFile: ";
+    cin >> source;
+    cout << endl;
+    fileSystem->displayFile(source);
+    cout << endl;
+    cout << endl;
 }
