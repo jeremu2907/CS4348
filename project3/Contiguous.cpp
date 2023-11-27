@@ -40,9 +40,13 @@ bool Contiguous::copyToSim(std::string fileName, std::vector<char> val)
         return false;
     }
 
-    std::string tableEntry = fileName + "\t\t\t" + std::to_string(block) + "\t" + std::to_string(numBlocks) + "\n";
-
     //Update File table
+    std::stringstream ss;
+    ss  << std::setw(8) << std::left << fileName << " " 
+        << std::setw(3) << std::right << std::to_string(block)
+        << std::setw(3) << std::right << std::to_string(numBlocks)
+        << "\n";
+    std::string tableEntry = ss.str();
     std::vector<char> data = disk.read(0);
     int tableWritePosition = findLastEntryTable();
     for (int i = 0; i < tableEntry.size(); i++)

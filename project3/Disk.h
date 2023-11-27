@@ -20,6 +20,7 @@ class Disk
     friend class FileSystem;
     friend class Contiguous;
     friend class Indexed;
+    friend class Chained;
 };
 
 #endif

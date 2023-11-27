@@ -3,8 +3,56 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-
+#include <iomanip>
 #include <iostream>
+
+int * Indexed::getFileInfo(std::vector<char> v, std::string s)
+{
+    int startIdx = -1;
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if (
+            (i + s.size() <= v.size()) &&
+            std::equal(s.begin(), s.end(), v.begin() + i) &&
+            (v[i + s.size()] == ' ')
+        ) 
+        {
+            startIdx = static_cast<int>(i); // Found the start index of the sub-vector
+            break;
+        }
+
+        i += 16;
+    }
+
+    if (startIdx == -1)
+    {
+        return new int(-1);
+    }
+
+    int endIdx;
+    for (int i = startIdx; i < v.size(); ++i)
+    {
+        if(v.at(i) == '\n')
+        {
+            endIdx = i;
+            break;
+        }
+    }
+
+    std::stringstream ss;
+    ss << std::string(v.begin() + startIdx, v.begin() + endIdx);
+
+    std::vector<std::string> tokens;
+    std::string token;
+    while (std::getline(ss, token, ' '))
+    {
+        tokens.push_back(token);
+    }
+
+    int * data = new int[1]{std::stoi(tokens[tokens.size() - 1])};
+
+    return data;
+}
 
 std::vector<int> Indexed::findBlock(int blockSize)
 {
@@ -88,7 +136,11 @@ bool Indexed::copyToSim (std::string fileName, std::vector<char> val)
     disk.write(blockList.at(0), indexBlockData);
 
     //Update File table
-    std::string tableEntry = fileName + "\t\t\t" + std::to_string(blockList[0]) + "\t" + std::to_string(numBlocks) + "\n";
+    std::stringstream ss;
+    ss  << std::setw(8) << std::left << fileName << " " 
+        << std::setw(3) << std::right << std::to_string(blockList[0])
+        << "\n";
+    std::string tableEntry = ss.str();
     std::vector<char> data = disk.read(0);
     int tableWritePosition = findLastEntryTable();
     for (int i = 0; i < tableEntry.size(); i++)
@@ -116,23 +168,17 @@ void Indexed::copyToSystem (std::string source, std::string dest)
 {
     //Find starting block and length
     std::vector<char> data = disk.read(0);
-    int * fileInfo = getFileInfo(data, source);
+    int * fileInfo = Indexed::getFileInfo(data, source);
     if (*fileInfo == -1)
     {
         std::cout << "File not found. \n\n";
         return;
     }
     int indexBlock = fileInfo[0];
-    int numBlocks = fileInfo[1];
     
     std::ofstream outFile(dest, std::ios::binary);
 
     std::vector<int> blockList = getBlockList(disk.read(indexBlock));
-    if (numBlocks != blockList.size())
-    {
-        std::cout << "Memory Corrupted. \n\n";
-        return;
-    }
 
     for (int i = 0; i < blockList.size(); i++)
     {
@@ -147,21 +193,15 @@ void Indexed::displayFile(std::string fileName)
 {
     //Find starting block and length
     std::vector<char> data = disk.read(0);
-    int * fileInfo = getFileInfo(data, fileName);
+    int * fileInfo = Indexed::getFileInfo(data, fileName);
     if (*fileInfo == -1)
     {
-        std::cout << "File not found. \n\n";
+        std::cout << "File not found.\n\n";
         return;
     }
     int indexBlock = fileInfo[0];
-    int numBlocks = fileInfo[1];
 
     std::vector<int> blockList = getBlockList(disk.read(indexBlock));
-    if (numBlocks != blockList.size())
-    {
-        std::cout << "Memory Corrupted. \n\n";
-        return;
-    }
     
     for (int i = 0; i < blockList.size(); i++)
     {
@@ -180,14 +220,8 @@ bool Indexed::deleteFile(std::string fileName)
         return false;
     }
     int indexBlock = fileInfo[0];
-    int numBlocks = fileInfo[1];
 
     std::vector<int> blockList = getBlockList(disk.read(indexBlock));
-    if (numBlocks != blockList.size())
-    {
-        std::cout << "Memory Corrupted.\n\n";
-        return false;
-    }
 
     data = disk.read(1);
     for (int i = 0; i < blockList.size(); i++)

@@ -9,15 +9,15 @@ class FileSystem
 {
     protected:
         Disk disk;
-        int * getFileInfo(std::vector<char> v, std::string s);
         void removeFileInfo(std::string s);
         int findLastEntryTable();
 
     public:
-        void displayFileTable();
         void displayBitMap();
         void displayDiskBlock(int block);
+        void displayFileTable();
 
+        virtual int * getFileInfo(std::vector<char> v, std::string s);
         virtual bool copyToSim (std::string fileName, std::vector<char> val) {return false;};
         virtual void copyToSystem (std::string systemFileName, std::string simFileName) {};
         virtual void displayFile(std::string fileName) {};
@@ -43,6 +43,7 @@ class Indexed : public FileSystem
         std::vector<int> getBlockList(std::vector<char> s);
 
     public:
+        int * getFileInfo(std::vector<char> v, std::string s) override;
         bool copyToSim (std::string fileName, std::vector<char> val) override;
         void copyToSystem (std::string source, std::string dest) override;
         void displayFile(std::string fileName) override;
