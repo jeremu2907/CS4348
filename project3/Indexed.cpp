@@ -9,7 +9,7 @@
 int * Indexed::getFileInfo(std::vector<char> v, std::string s)
 {
     int startIdx = -1;
-    for (size_t i = 0; i < v.size(); i++)
+    for (size_t i = 0; i < v.size(); i += 13)
     {
         if (
             (i + s.size() <= v.size()) &&
@@ -20,8 +20,6 @@ int * Indexed::getFileInfo(std::vector<char> v, std::string s)
             startIdx = static_cast<int>(i); // Found the start index of the sub-vector
             break;
         }
-
-        i += 16;
     }
 
     if (startIdx == -1)
@@ -54,14 +52,14 @@ int * Indexed::getFileInfo(std::vector<char> v, std::string s)
     return data;
 }
 
-std::vector<int> Indexed::findBlock(int blockSize)
+std::vector<int> Indexed::findBlock(int numBlocks)
 {
-    ++blockSize;    //Acount for index block
+    ++numBlocks;    //Acount for index block
     std::vector<char> data = disk.read(1);
     std::vector<int> blocks;
 
     int currBlock = 2;
-    while(blocks.size() < blockSize && currBlock < data.size())
+    while(blocks.size() < numBlocks && currBlock < data.size())
     {
         if (data.at(currBlock) == '0')
         {

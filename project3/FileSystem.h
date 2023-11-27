@@ -27,7 +27,7 @@ class FileSystem
 class Contiguous : public FileSystem
 {
     private:
-        int findBlock(int blockSize);
+        int findBlock(int numBlocks);
 
     public:
         bool copyToSim (std::string fileName, std::vector<char> val) override;
@@ -39,11 +39,23 @@ class Contiguous : public FileSystem
 class Indexed : public FileSystem
 {
     private:
-        std::vector<int> findBlock(int blockSize);
+        std::vector<int> findBlock(int numBlocks);
         std::vector<int> getBlockList(std::vector<char> s);
 
     public:
         int * getFileInfo(std::vector<char> v, std::string s) override;
+        bool copyToSim (std::string fileName, std::vector<char> val) override;
+        void copyToSystem (std::string source, std::string dest) override;
+        void displayFile(std::string fileName) override;
+        bool deleteFile(std::string fileName) override;
+};
+
+class Chained : public FileSystem
+{
+    private:
+        std::vector<int> findBlock(int numBlocks);
+
+    public:
         bool copyToSim (std::string fileName, std::vector<char> val) override;
         void copyToSystem (std::string source, std::string dest) override;
         void displayFile(std::string fileName) override;

@@ -43,8 +43,8 @@ bool Contiguous::copyToSim(std::string fileName, std::vector<char> val)
     //Update File table
     std::stringstream ss;
     ss  << std::setw(8) << std::left << fileName << " " 
-        << std::setw(3) << std::right << std::to_string(block)
-        << std::setw(3) << std::right << std::to_string(numBlocks)
+        << std::setw(3) << std::right << std::to_string(block) << " "
+        << std::setw(2) << std::right << std::to_string(numBlocks)
         << "\n";
     std::string tableEntry = ss.str();
     std::vector<char> data = disk.read(0);

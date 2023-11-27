@@ -32,7 +32,7 @@ int main (int argc, char * argv[])
     } 
     else if (allocationMethod == "chained")
     {
-
+        fileSystem = new Chained();
     }
     else if (allocationMethod == "indexed")
     {
