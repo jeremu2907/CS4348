@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include <iostream>
 
@@ -10,7 +11,7 @@
 int Contiguous::findBlock(int numBlocks)
 {
    int count = 0; // Counter for consecutive '0' values
-    for (size_t i = 0; i < disk.storage->at(1).size(); ++i) {
+    for (size_t i = 0; i < Disk::BLOCKS; ++i) {
         if (disk.storage->at(1).at(i) == '0') {
             ++count;
             if (count == numBlocks) {
@@ -25,7 +26,7 @@ int Contiguous::findBlock(int numBlocks)
 
 bool Contiguous::copyToSim(std::string fileName, std::vector<char> val) 
 {
-    int numBlocks = (val.size() + Disk::BLOCK_SIZE) / Disk::BLOCK_SIZE;
+    int numBlocks = (val.size() + Disk::BLOCK_SIZE - 1) / Disk::BLOCK_SIZE;
     int block = Contiguous::findBlock(numBlocks);
 
     if (block == -1)
@@ -78,7 +79,7 @@ bool Contiguous::copyToSim(std::string fileName, std::vector<char> val)
     return true;
 }
 
-void Contiguous::copyToSystem (std::string source, std::string dest)
+bool Contiguous::copyToSystem (std::string source, std::string dest)
 {
     //Find starting block and length
     std::vector<char> data = disk.read(0);
@@ -86,7 +87,7 @@ void Contiguous::copyToSystem (std::string source, std::string dest)
     if (*fileInfo == -1)
     {
         std::cout << "File not found. \n\n";
-        return;
+        return false;
     }
     int block = fileInfo[0];
     int numBlocks = fileInfo[1];
@@ -100,6 +101,7 @@ void Contiguous::copyToSystem (std::string source, std::string dest)
     }
 
     outFile.close();
+    return true;
 }
 
 void Contiguous::displayFile(std::string fileName)

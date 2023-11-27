@@ -59,7 +59,7 @@ std::vector<int> Indexed::findBlock(int numBlocks)
     std::vector<int> blocks;
 
     int currBlock = 2;
-    while(blocks.size() < numBlocks && currBlock < data.size())
+    while((blocks.size() < numBlocks) && (currBlock < Disk::BLOCKS))
     {
         if (data.at(currBlock) == '0')
         {
@@ -99,7 +99,7 @@ std::vector<int> Indexed::getBlockList(std::vector<char> s)
 
 bool Indexed::copyToSim (std::string fileName, std::vector<char> val)
 {
-    int numBlocks = (val.size() + Disk::BLOCK_SIZE) / Disk::BLOCK_SIZE;
+    int numBlocks = (val.size() + Disk::BLOCK_SIZE - 1) / Disk::BLOCK_SIZE;
     std::vector<int> blockList = Indexed::findBlock(numBlocks);
 
     if (numBlocks > 10)
@@ -108,7 +108,7 @@ bool Indexed::copyToSim (std::string fileName, std::vector<char> val)
         return false;
     }
 
-    if (blockList.size() == 0)
+    if ((blockList.size() < numBlocks) || (numBlocks > Disk::BLOCK_SIZE))
     {
         std::cout << "Not enough space in disk.\n\n";
         return false;
@@ -162,7 +162,7 @@ bool Indexed::copyToSim (std::string fileName, std::vector<char> val)
     return true;
 }
 
-void Indexed::copyToSystem (std::string source, std::string dest)
+bool Indexed::copyToSystem (std::string source, std::string dest)
 {
     //Find starting block and length
     std::vector<char> data = disk.read(0);
@@ -170,7 +170,7 @@ void Indexed::copyToSystem (std::string source, std::string dest)
     if (*fileInfo == -1)
     {
         std::cout << "File not found. \n\n";
-        return;
+        return false;
     }
     int indexBlock = fileInfo[0];
     
@@ -185,6 +185,7 @@ void Indexed::copyToSystem (std::string source, std::string dest)
     }
 
     outFile.close();
+    return true;
 }
 
 void Indexed::displayFile(std::string fileName)

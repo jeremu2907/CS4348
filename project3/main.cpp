@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <limits>
 
 #include "utils.h"
 #include "FileSystem.h"
@@ -107,9 +108,13 @@ void copyFileFromSimulation(FileSystem * fileSystem)
     cout << "\nCopy to: ";
     cin >> dest;
 
-    fileSystem->copyToSystem(source, dest);
+    if  (!fileSystem->copyToSystem(source, dest))
+    {
+        printf("File %s failed to copy\n\n", source.c_str());
+        return;
+    }
     
-    printf("\nFile %s copied\n\n", source.c_str());
+    printf("File %s copied\n\n", source.c_str());
 }
 
 void copyFileFromRealSystem(FileSystem * fileSystem)
@@ -127,15 +132,38 @@ void copyFileFromRealSystem(FileSystem * fileSystem)
         return;
     }
 
+    bool invalid = false;
     do
     {
+        cout << "\nCopy to: ";
+        cin >> dest;
+
         if(dest.size() > 8)
         {
             cout << "Simulation file name exceed 8 characters. Try again.\n";
+            invalid = true;
+            continue;
         }
-        cout << "\nCopy to: ";
-        cin >> dest;
-    } while (dest.size() > 8);
+
+        bool invalidSyntax = false;
+        for (auto i : dest)
+        {
+            if(int(i) == 46)
+            {
+                cout << "Simulation file does not support extensions.";
+                invalidSyntax = true;
+                break;
+            }
+            
+            if(int(i) < 97 || int(i) > 122)
+            {
+                cout << "Simulation file contains uppercase or invalid characters.";
+                invalidSyntax = true;
+                break;
+            }
+        }
+        invalid = invalidSyntax;
+    } while (invalid);
 
     string data = "";
     string buffer;
@@ -149,7 +177,7 @@ void copyFileFromRealSystem(FileSystem * fileSystem)
     {
         return;
     }
-    printf("\nFile %s copied\n\n", source.c_str());
+    printf("File %s copied\n\n", source.c_str());
 }
 
 void displayFile(FileSystem * fileSystem)

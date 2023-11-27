@@ -19,7 +19,7 @@ class FileSystem
 
         virtual int * getFileInfo(std::vector<char> v, std::string s);
         virtual bool copyToSim (std::string fileName, std::vector<char> val) {return false;};
-        virtual void copyToSystem (std::string systemFileName, std::string simFileName) {};
+        virtual bool copyToSystem (std::string systemFileName, std::string simFileName) {return false;};
         virtual void displayFile(std::string fileName) {};
         virtual bool deleteFile(std::string fileName) {return false;};
 };
@@ -31,7 +31,7 @@ class Contiguous : public FileSystem
 
     public:
         bool copyToSim (std::string fileName, std::vector<char> val) override;
-        void copyToSystem (std::string source, std::string dest) override;
+        bool copyToSystem (std::string source, std::string dest) override;
         void displayFile(std::string fileName) override;
         bool deleteFile(std::string fileName) override;
 };
@@ -45,7 +45,7 @@ class Indexed : public FileSystem
     public:
         int * getFileInfo(std::vector<char> v, std::string s) override;
         bool copyToSim (std::string fileName, std::vector<char> val) override;
-        void copyToSystem (std::string source, std::string dest) override;
+        bool copyToSystem (std::string source, std::string dest) override;
         void displayFile(std::string fileName) override;
         bool deleteFile(std::string fileName) override;
 };
@@ -57,7 +57,7 @@ class Chained : public FileSystem
 
     public:
         bool copyToSim (std::string fileName, std::vector<char> val) override;
-        void copyToSystem (std::string source, std::string dest) override;
+        bool copyToSystem (std::string source, std::string dest) override;
         void displayFile(std::string fileName) override;
         bool deleteFile(std::string fileName) override;
 };
