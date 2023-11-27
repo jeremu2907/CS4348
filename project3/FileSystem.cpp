@@ -6,14 +6,22 @@
 
 int * FileSystem::getFileInfo(std::vector<char> v, std::string s)
 {
-    std::cout << v.data() << std::endl;
     int startIdx = -1;
-    for (size_t i = 0; i < v.size(); ++i)
+    for (size_t i = 0; i < v.size(); i++)
     {
-        if ((i + s.size() <= v.size()) && std::equal(s.begin(), s.end(), v.begin() + i)) 
+        if (
+            (i + s.size() <= v.size()) &&
+            std::equal(s.begin(), s.end(), v.begin() + i) &&
+            (v[i + s.size()] == '\t')
+        ) 
         {
             startIdx = static_cast<int>(i); // Found the start index of the sub-vector
             break;
+        }
+
+        while(v[i] != '\n' && i < v.size())
+        {
+            i++;
         }
     }
 
@@ -47,10 +55,25 @@ int * FileSystem::getFileInfo(std::vector<char> v, std::string s)
     return data;
 }
 
+int FileSystem::findLastEntryTable()
+{
+    std::vector<char> data = disk.read(0);
+    int pos = 0;
+    for(int i = data.size() - 1; i >= 0; i--)
+    {
+        if (data.at(i) == '\n')
+        {
+            pos = i + 1;
+            break;
+        }
+    }
+
+    return pos;
+}
+
 void FileSystem::removeFileInfo(std::string s)
 {
     std::vector<char> data = disk.read(0);
-    std::cout << data.data() << std::endl;
     int startIdx;
     for (size_t i = 0; i < data.size(); ++i)
     {

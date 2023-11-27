@@ -36,7 +36,7 @@ int main (int argc, char * argv[])
     }
     else if (allocationMethod == "indexed")
     {
-
+        fileSystem = new Indexed();
     }
     else
     {
@@ -56,7 +56,7 @@ int main (int argc, char * argv[])
         if(cin.fail() || option > 8 || option < 1)
         {
             cin.clear();
-            cin.ignore();
+            cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             invalidChoice = true;
             continue;
         }
@@ -182,8 +182,9 @@ void deleteFile(FileSystem * fileSystem)
     cout << "\n\nDelete File in Simulation";
     cout << "\nFile Name: ";
     cin >> fileName;
-    cout << endl;
-    fileSystem->deleteFile(fileName);
-    cout << endl;
-    cout << endl;
+    if(!fileSystem->deleteFile(fileName))
+    {
+        return;
+    }
+    printf("File %s sucessully deleted.\n\n", fileName.c_str());
 }
